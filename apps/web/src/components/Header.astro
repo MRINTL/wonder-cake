@@ -1,0 +1,106 @@
+---
+import { MENU } from '../lib/nav'
+import type { SettingsGlobal } from '../lib/payload'
+import { pagePath, url } from '../lib/url'
+
+type Props = { settings: SettingsGlobal }
+const { settings } = Astro.props
+const path = pagePath(Astro.url.pathname)
+const isActive = (href: string) => path === href || (href !== '/' && path.startsWith(href))
+---
+<header class="sticky top-0 z-50 border-b border-navy/8 bg-white/90 backdrop-blur-md">
+  <div class="container-page">
+    <div class="flex h-16 items-center gap-2 sm:gap-3 lg:h-20">
+      <button type="button" class="-ml-1.5 grid size-9 shrink-0 place-items-center rounded-full text-navy hover:bg-primary-soft sm:size-10 lg:hidden" data-menu-open aria-label="Меню">
+        <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      </button>
+
+      <a href={url('/')} class="flex min-w-0 items-center gap-2">
+        <span class="grid size-9 shrink-0 place-items-center rounded-2xl bg-primary text-white lg:size-10">
+          <svg viewBox="0 0 24 24" class="size-5" fill="currentColor"><path d="M12 3c.9 1.2 1.4 2 1.4 2.7 0 .9-.6 1.5-1.4 1.5s-1.4-.6-1.4-1.5c0-.7.5-1.5 1.4-2.7Z"/><path d="M5 12.6c1.6 0 1.6 1.2 3.5 1.2s1.9-1.2 3.5-1.2 1.6 1.2 3.5 1.2 1.9-1.2 3.5-1.2v4.9c0 1.4-1.1 2.5-2.5 2.5H7.5A2.5 2.5 0 0 1 5 17.5v-4.9Z"/><path d="M6.6 8.6h10.8c.9 0 1.6.7 1.6 1.6v.9c-1.6 0-1.6 1.2-3.5 1.2s-1.6-1.2-3.5-1.2-1.9 1.2-3.5 1.2S6.9 11.1 5 11.1v-.9c0-.9.7-1.6 1.6-1.6Z"/></svg>
+        </span>
+        <span class="min-w-0 leading-tight">
+          <span class="block truncate text-base font-extrabold tracking-tight sm:text-lg lg:text-xl">{settings.siteName}</span>
+          <span class="hidden text-[11px] font-semibold uppercase tracking-wider text-navy-soft sm:block">{settings.tagline}</span>
+        </span>
+      </a>
+
+      <nav class="ml-6 hidden items-center gap-1 lg:flex">
+        {MENU.map((item) => (
+          <a href={url(item.href)} class={`rounded-full px-3 py-2 text-[15px] font-semibold transition hover:bg-primary-soft hover:text-primary ${isActive(item.href) ? 'text-primary' : 'text-navy'}`}>
+            {item.label}
+          </a>
+        ))}
+      </nav>
+
+      <div class="ml-auto flex shrink-0 items-center sm:gap-1">
+        <button type="button" class="grid size-9 place-items-center rounded-full text-navy transition hover:bg-primary-soft hover:text-primary sm:size-10" data-search-open aria-label="Пошук">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+          </svg>
+        </button>
+
+        <a href={url('/vhid')} class="grid size-9 place-items-center rounded-full text-navy transition hover:bg-primary-soft hover:text-primary sm:size-10" aria-label="Вхід">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+            <circle cx="12" cy="8" r="3.6" /><path d="M5 20c.8-3.4 3.6-5.2 7-5.2s6.2 1.8 7 5.2" />
+          </svg>
+        </a>
+
+        <a href={url('/obrane')} class="relative grid size-9 place-items-center rounded-full text-navy transition hover:bg-primary-soft hover:text-primary sm:size-10" aria-label="Обране">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+            <path d="M12 20.5S3.8 15.4 3.8 9.7A4.7 4.7 0 0 1 12 6.6a4.7 4.7 0 0 1 8.2 3.1c0 5.7-8.2 10.8-8.2 10.8z" />
+          </svg>
+          <span data-fav-count class="absolute right-0.5 top-0.5 hidden min-w-4 rounded-full bg-accent px-1 text-center text-[10px] font-extrabold leading-4 text-navy"></span>
+        </a>
+
+        <a href={url('/koshyk')} class="relative grid size-9 place-items-center rounded-full text-navy transition hover:bg-primary-soft hover:text-primary sm:size-10" aria-label="Кошик">
+          <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 6h2l1.6 9.4a2 2 0 0 0 2 1.6h6.9a2 2 0 0 0 2-1.6L20 9H7" />
+            <circle cx="10" cy="20" r="1.2" fill="currentColor" /><circle cx="17" cy="20" r="1.2" fill="currentColor" />
+          </svg>
+          <span data-cart-count class="absolute right-0.5 top-0.5 hidden min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-extrabold leading-4 text-white"></span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Пошук -->
+  <div data-search-panel hidden class="border-t border-navy/8 bg-white">
+    <form action={url('/poshuk')} method="get" class="container-page flex items-center gap-2 py-3">
+      <div class="relative flex-1">
+        <svg viewBox="0 0 24 24" class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-navy-soft" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+        </svg>
+        <input type="search" name="q" data-search-input placeholder="Торт, пончики, макарони…" class="w-full rounded-full border border-navy/12 bg-cream py-3 pl-12 pr-4 text-[15px] outline-none focus:border-primary" />
+      </div>
+      <button type="submit" class="btn btn-primary py-3">Знайти</button>
+      <button type="button" class="btn btn-ghost px-2 py-3" data-search-close aria-label="Закрити">✕</button>
+    </form>
+  </div>
+</header>
+
+<!-- Мобільне меню -->
+<div data-menu-panel hidden class="fixed inset-0 z-60 lg:hidden">
+  <div class="absolute inset-0 bg-navy/40 backdrop-blur-sm" data-menu-close></div>
+  <nav class="absolute inset-y-0 left-0 flex w-[86%] max-w-sm flex-col bg-white p-5 shadow-2xl">
+    <div class="flex items-center justify-between">
+      <span class="text-lg font-extrabold">{settings.siteName}</span>
+      <button type="button" class="grid size-10 place-items-center rounded-full hover:bg-primary-soft" data-menu-close aria-label="Закрити">✕</button>
+    </div>
+    <div class="mt-6 flex flex-col">
+      {MENU.map((item) => (
+        <a href={url(item.href)} class={`border-b border-navy/8 py-3.5 text-lg font-bold ${isActive(item.href) ? 'text-primary' : ''}`}>{item.label}</a>
+      ))}
+    </div>
+    <div class="mt-6 flex flex-col gap-2">
+      <a href={url('/obrane')} class="btn btn-outline">Обране</a>
+      <a href={url('/koshyk')} class="btn btn-primary">Кошик</a>
+      <a href={url('/vhid')} class="btn btn-ghost">Вхід / реєстрація</a>
+    </div>
+    {settings.contacts?.phone && (
+      <a href={`tel:${settings.contacts.phone.replace(/\s|\(|\)|-/g, '')}`} class="mt-auto pt-6 text-lg font-extrabold text-primary">{settings.contacts.phone}</a>
+    )}
+  </nav>
+</div>

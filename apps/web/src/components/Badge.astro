@@ -1,0 +1,15 @@
+---
+import { BADGE_LABEL } from '../lib/format'
+
+type Props = { value: string }
+const { value } = Astro.props
+
+const styles: Record<string, string> = {
+  hit: 'bg-primary text-white',
+  new: 'bg-accent text-navy',
+  sale: 'bg-navy text-white',
+}
+---
+<span class={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wide ${styles[value] || 'bg-navy/10 text-navy'}`}>
+  {BADGE_LABEL[value] || value}
+</span>

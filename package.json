@@ -1,0 +1,19 @@
+{
+  "name": "wondercake",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "concurrently -n cms,web -c magenta,cyan \"npm:dev:cms\" \"npm:dev:web\"",
+    "dev:cms": "npm run dev -w @wondercake/cms",
+    "dev:web": "npm run dev -w @wondercake/web",
+    "seed": "npm run seed -w @wondercake/cms",
+    "build": "npm run build -w @wondercake/cms && npm run build -w @wondercake/web",
+    "deploy:pages": "npm run build -w @wondercake/web && sh scripts/deploy-pages.sh"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": { "node": ">=20.9.0" }
+}

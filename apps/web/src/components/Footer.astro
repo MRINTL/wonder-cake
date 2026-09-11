@@ -1,0 +1,64 @@
+---
+import { MENU, LEGAL } from '../lib/nav'
+import type { SettingsGlobal } from '../lib/payload'
+import { url } from '../lib/url'
+
+type Props = { settings: SettingsGlobal }
+const { settings } = Astro.props
+const year = new Date().getFullYear()
+---
+<footer class="mt-16 bg-navy text-white">
+  <div class="container-page py-12 lg:py-16">
+    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div>
+        <p class="text-xl font-extrabold">{settings.siteName}</p>
+        <p class="mt-3 text-sm leading-relaxed text-white/70">{settings.footerNote}</p>
+        <div class="mt-5 flex gap-2">
+          {(settings.socials || []).map((social) => (
+            <a href={social.href} target="_blank" rel="noopener" class="rounded-full border border-white/20 px-3.5 py-1.5 text-xs font-bold transition hover:border-accent hover:text-accent">
+              {social.label}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-accent">Каталог</p>
+        <ul class="mt-4 space-y-2.5 text-sm text-white/75">
+          {MENU.map((item) => (
+            <li><a href={url(item.href)} class="transition hover:text-accent">{item.label}</a></li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-accent">Контакти</p>
+        <ul class="mt-4 space-y-2.5 text-sm text-white/75">
+          {settings.contacts?.phone && <li><a href={`tel:${settings.contacts.phone.replace(/\s|\(|\)|-/g, '')}`} class="font-bold text-white transition hover:text-accent">{settings.contacts.phone}</a></li>}
+          {settings.contacts?.email && <li><a href={`mailto:${settings.contacts.email}`} class="transition hover:text-accent">{settings.contacts.email}</a></li>}
+          {settings.contacts?.address && <li>{settings.contacts.address}</li>}
+          {settings.contacts?.schedule && <li>{settings.contacts.schedule}</li>}
+        </ul>
+      </div>
+
+      <div>
+        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-accent">Доставка</p>
+        <ul class="mt-4 space-y-3 text-sm text-white/75">
+          {(settings.delivery || []).map((item) => (
+            <li>
+              <span class="block font-bold text-white">{item.title}</span>
+              {item.text}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-10 flex flex-col gap-3 border-t border-white/12 pt-6 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
+      <p>© {year} {settings.siteName}. Демо-версія сайту.</p>
+      <div class="flex flex-wrap gap-x-5 gap-y-2">
+        {LEGAL.map((item) => <a href={url(item.href)} class="transition hover:text-accent">{item.label}</a>)}
+      </div>
+    </div>
+  </div>
+</footer>

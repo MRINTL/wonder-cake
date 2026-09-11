@@ -1,0 +1,61 @@
+---
+import Base from '../layouts/Base.astro'
+import { url } from '../lib/url'
+---
+<Base title="Обране">
+  <section class="section">
+    <div class="container-page">
+      <h1 class="text-2xl font-extrabold sm:text-4xl">Обране</h1>
+      <p class="mt-2 text-sm text-navy-soft">Список зберігається у цьому браузері.</p>
+
+      <div data-fav-empty hidden class="card mt-6 p-8 text-center sm:p-12">
+        <p class="text-5xl">💗</p>
+        <p class="mt-4 text-lg font-bold">Тут поки порожньо</p>
+        <p class="mt-2 text-sm text-navy-soft">Натисніть сердечко на картці товару — і він збережеться тут.</p>
+        <a href={url('/katalog')} class="btn btn-primary mt-6">У каталог</a>
+      </div>
+
+      <div data-fav-items class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3"></div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { getFavorites, removeFavorite, addToCart } from '../scripts/store.ts'
+  import { url } from '../lib/url'
+
+  const UNIT: Record<string, string> = { kg: 'за кг', pcs: 'за шт', set: 'за набір' }
+  const EMOJI: Record<string, string> = { cake: '🎂', donut: '🍩', cakepop: '🍭', other: '🎁' }
+  const money = (value: number) => `${new Intl.NumberFormat('uk-UA').format(value)} ₴`
+
+  const render = () => {
+    const favorites = getFavorites()
+    document.querySelector<HTMLElement>('[data-fav-empty]')!.hidden = favorites.length > 0
+    document.querySelector<HTMLElement>('[data-fav-items]')!.innerHTML = favorites
+      .map(
+        (item) => `
+        <article class="card flex gap-3 p-3 sm:p-4">
+          <a href="${url(`/tovar/${item.slug}`)}" class="grid size-20 shrink-0 place-items-center rounded-xl bg-accent-soft text-3xl">${EMOJI[item.shape || 'cake'] || '🍰'}</a>
+          <div class="flex flex-1 flex-col">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="font-bold leading-snug"><a href="${url(`/tovar/${item.slug}`)}" class="hover:text-primary">${item.title}</a></h3>
+              <button type="button" class="text-navy-soft hover:text-primary" data-unfav="${item.id}" aria-label="Прибрати">✕</button>
+            </div>
+            <p class="mt-0.5 text-xs text-navy-soft">${money(item.price)} ${UNIT[item.unit] || ''}</p>
+            <button type="button" class="btn btn-primary mt-auto py-2.5 text-sm" data-fav-cart='${JSON.stringify(item)}'>У кошик</button>
+          </div>
+        </article>`,
+      )
+      .join('')
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = (event.target as HTMLElement).closest<HTMLElement>('[data-unfav],[data-fav-cart]')
+    if (!target) return
+    if (target.dataset.unfav) removeFavorite(Number(target.dataset.unfav))
+    if (target.dataset.favCart) addToCart(JSON.parse(target.dataset.favCart))
+  })
+
+  document.addEventListener('store:change', render)
+  render()
+</script>

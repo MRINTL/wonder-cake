@@ -1,0 +1,35 @@
+---
+import type { Product } from '../lib/payload'
+import { url } from '../lib/url'
+import ProductCard from './ProductCard.astro'
+
+/** data-* атрибути потрібні клієнтським фільтрам, сортуванню та пошуку (сайт статичний) */
+type Props = { products: Product[]; empty?: string; searchable?: boolean }
+const { products, empty = 'Нічого не знайшли. Спробуйте змінити фільтр.', searchable = false } = Astro.props
+
+const searchText = (product: Product): string =>
+  [product.title, product.shortDescription, product.description, ...(product.tags || []).map((tag) => tag.value)]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+---
+<div data-grid-empty hidden={products.length > 0} class="card p-8 text-center">
+  <p class="text-lg font-bold">Порожньо</p>
+  <p data-grid-empty-text class="mt-2 text-sm text-navy-soft">{empty}</p>
+  <a href={url('/katalog')} class="btn btn-outline mt-5">Відкрити весь каталог</a>
+</div>
+<div data-product-grid hidden={products.length === 0} class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+  {products.map((product) => (
+    <div
+      class="flex"
+      data-product
+      data-category={product.category?.slug}
+      data-price={product.price}
+      data-orders={product.orders ?? 0}
+      data-title={product.title}
+      data-search={searchable ? searchText(product) : undefined}
+    >
+      <ProductCard product={product} class="w-full" />
+    </div>
+  ))}
+</div>

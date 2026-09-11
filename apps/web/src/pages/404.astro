@@ -1,0 +1,19 @@
+---
+import Base from '../layouts/Base.astro'
+import { url } from '../lib/url'
+---
+<Base title="Сторінку не знайдено">
+  <section class="section">
+    <div class="container-page">
+      <div class="mx-auto max-w-lg text-center">
+        <p class="text-7xl">🍰</p>
+        <h1 class="mt-6 text-3xl font-extrabold sm:text-4xl">Такої сторінки немає</h1>
+        <p class="mt-3 text-navy-soft">Можливо, її з'їли. Спробуйте каталог або пошук.</p>
+        <div class="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+          <a href={url('/katalog')} class="btn btn-primary">У каталог</a>
+          <a href={url('/')} class="btn btn-outline">На головну</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

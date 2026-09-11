@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro'
+import PageHero from '../components/PageHero.astro'
+import CatalogFilters from '../components/CatalogFilters.astro'
+import ProductGrid from '../components/ProductGrid.astro'
+import { getCategories, getProducts } from '../lib/payload'
+
+const [categories, result] = await Promise.all([
+  getCategories(),
+  getProducts({ limit: 100 }),
+])
+---
+<Base title="Каталог" description="Усі десерти WonderCake: торти, пончики, кейкпопси, макарони та подарункові бокси.">
+  <PageHero
+    eyebrow="Каталог"
+    title="Весь каталог"
+    text="Усе, що ми печемо щодня. Фільтруйте за категорією або відсортуйте, як зручно."
+    count={result.totalDocs}
+  />
+
+  <section class="section">
+    <div class="container-page">
+      <CatalogFilters categories={categories} heroFromCategory />
+      <div class="mt-8">
+        <ProductGrid products={result.docs} />
+      </div>
+    </div>
+  </section>
+</Base>

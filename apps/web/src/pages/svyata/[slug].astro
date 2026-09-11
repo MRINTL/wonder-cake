@@ -1,0 +1,39 @@
+---
+import Base from '../../layouts/Base.astro'
+import PageHero from '../../components/PageHero.astro'
+import ProductGrid from '../../components/ProductGrid.astro'
+import type { GetStaticPaths } from 'astro'
+import { getHolidays, getProducts, type Holiday } from '../../lib/payload'
+import { url } from '../../lib/url'
+
+export const getStaticPaths = (async () => {
+  const holidays = await getHolidays()
+  return holidays.map((holiday) => ({ params: { slug: holiday.slug }, props: { holiday, holidays } }))
+}) satisfies GetStaticPaths
+
+type Props = { holiday: Holiday; holidays: Holiday[] }
+const { holiday, holidays } = Astro.props
+const result = await getProducts({ holidaySlug: holiday.slug, limit: 48 })
+---
+<Base title={holiday.title} description={holiday.description}>
+  <PageHero
+    eyebrow={holiday.date || 'Свято'}
+    title={`${holiday.emoji || ''} ${holiday.title}`.trim()}
+    text={holiday.description}
+    count={result.totalDocs}
+  />
+  <section class="section">
+    <div class="container-page">
+      <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:px-0">
+        {holidays.map((item) => (
+          <a href={url(`/svyata/${item.slug}`)} class={`btn shrink-0 px-4 py-2.5 text-sm ${item.slug === holiday.slug ? 'btn-primary' : 'btn-outline'}`}>
+            {item.emoji} {item.title}
+          </a>
+        ))}
+      </div>
+      <div class="mt-8">
+        <ProductGrid products={result.docs} empty="До цього свята ще нічого не додали." />
+      </div>
+    </div>
+  </section>
+</Base>

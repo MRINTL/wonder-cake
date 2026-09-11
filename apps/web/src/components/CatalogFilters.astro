@@ -1,0 +1,115 @@
+---
+import type { Category } from '../lib/payload'
+
+/**
+ * Фільтр і сортування працюють у браузері: сторінка статична,
+ * а стан живе у ?kategoriya=…&sort=… — тож посилання з категорій лишаються робочими.
+ */
+type Props = {
+  categories: Category[]
+  /** Підміняти заголовок і опис PageHero на дані обраної категорії */
+  heroFromCategory?: boolean
+}
+const { categories, heroFromCategory = false } = Astro.props
+
+const heroData = heroFromCategory
+  ? JSON.stringify(categories.map(({ slug, title, description }) => ({ slug, title, description })))
+  : undefined
+
+const SORTS = [
+  { value: '-orders', label: 'Популярні' },
+  { value: 'price', label: 'Спочатку дешевші' },
+  { value: '-price', label: 'Спочатку дорожчі' },
+  { value: 'title', label: 'За назвою' },
+]
+---
+<div data-catalog data-hero-categories={heroData} class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+  {categories.length > 1 && (
+    <div class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-wrap lg:px-0">
+      <button type="button" data-filter="" class="btn btn-primary shrink-0 px-4 py-2.5 text-sm">Усі</button>
+      {categories.map((category) => (
+        <button type="button" data-filter={category.slug} class="btn btn-outline shrink-0 px-4 py-2.5 text-sm">
+          {category.title}
+        </button>
+      ))}
+    </div>
+  )}
+
+  <label class="flex shrink-0 items-center gap-2 text-sm text-navy-soft lg:ml-auto">
+    Сортувати
+    <select data-sort class="rounded-full border border-navy/12 bg-white px-3.5 py-2.5 text-sm font-semibold text-navy outline-none focus:border-primary">
+      {SORTS.map((option) => <option value={option.value}>{option.label}</option>)}
+    </select>
+  </label>
+</div>
+
+<script>
+  import { plural } from '../lib/format'
+
+  type HeroCategory = { slug: string; title: string; description?: string }
+
+  const root = document.querySelector<HTMLElement>('[data-catalog]')
+  const grid = document.querySelector<HTMLElement>('[data-product-grid]')
+
+  if (root && grid) {
+    const items = [...grid.querySelectorAll<HTMLElement>('[data-product]')]
+    const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-filter]')]
+    const select = root.querySelector<HTMLSelectElement>('[data-sort]')!
+    const empty = document.querySelector<HTMLElement>('[data-grid-empty]')
+    const heroTitle = document.querySelector<HTMLElement>('[data-hero-title]')
+    const heroText = document.querySelector<HTMLElement>('[data-hero-text]')
+    const heroCount = document.querySelector<HTMLElement>('[data-hero-count]')
+    const heroCategories: HeroCategory[] = JSON.parse(root.dataset.heroCategories || '[]')
+    const defaultHero = { title: heroTitle?.textContent || '', text: heroText?.textContent || '' }
+
+    const num = (item: HTMLElement, key: string) => Number(item.dataset[key]) || 0
+    const SORTERS: Record<string, (a: HTMLElement, b: HTMLElement) => number> = {
+      '-orders': (a, b) => num(b, 'orders') - num(a, 'orders'),
+      price: (a, b) => num(a, 'price') - num(b, 'price'),
+      '-price': (a, b) => num(b, 'price') - num(a, 'price'),
+      title: (a, b) => (a.dataset.title || '').localeCompare(b.dataset.title || '', 'uk'),
+    }
+
+    const apply = () => {
+      const params = new URLSearchParams(location.search)
+      const category = params.get('kategoriya') || ''
+      const sort = SORTERS[params.get('sort') || ''] ? params.get('sort')! : '-orders'
+
+      let visible = 0
+      items.sort(SORTERS[sort]).forEach((item) => {
+        item.hidden = category !== '' && item.dataset.category !== category
+        if (!item.hidden) visible += 1
+        grid.append(item)
+      })
+      grid.hidden = visible === 0
+      if (empty) empty.hidden = visible > 0
+
+      buttons.forEach((button) => {
+        const active = button.dataset.filter === category
+        button.classList.toggle('btn-primary', active)
+        button.classList.toggle('btn-outline', !active)
+      })
+      select.value = sort
+
+      if (heroCount) heroCount.textContent = `${visible} ${plural(visible, 'позиція', 'позиції', 'позицій')} у наявності`
+      if (heroCategories.length > 0) {
+        const active = heroCategories.find((item) => item.slug === category)
+        if (heroTitle) heroTitle.textContent = active?.title || defaultHero.title
+        if (heroText) heroText.textContent = active?.description || defaultHero.text
+      }
+    }
+
+    const update = (key: string, value: string) => {
+      const params = new URLSearchParams(location.search)
+      if (value) params.set(key, value)
+      else params.delete(key)
+      const query = params.toString()
+      history.replaceState(null, '', `${location.pathname}${query ? `?${query}` : ''}`)
+      apply()
+    }
+
+    buttons.forEach((button) => button.addEventListener('click', () => update('kategoriya', button.dataset.filter || '')))
+    select.addEventListener('change', () => update('sort', select.value === '-orders' ? '' : select.value))
+    apply()
+  }
+</script>

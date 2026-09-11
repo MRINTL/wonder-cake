@@ -1,0 +1,16 @@
+---
+import Base from '../layouts/Base.astro'
+import PageHero from '../components/PageHero.astro'
+import ContentSections from '../components/ContentSections.astro'
+import { getPage } from '../lib/payload'
+
+const page = await getPage('umovy')
+---
+<Base title={page?.title || 'Умови використання'} description={page?.intro}>
+  <PageHero eyebrow="Документи" title={page?.title || 'Умови використання'} text={page?.intro} />
+  <section class="section">
+    <div class="container-page">
+      <ContentSections sections={page?.sections} />
+    </div>
+  </section>
+</Base>

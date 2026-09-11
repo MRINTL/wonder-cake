@@ -1,0 +1,113 @@
+---
+import Base from '../layouts/Base.astro'
+import { url } from '../lib/url'
+---
+<Base title="Кошик">
+  <section class="section">
+    <div class="container-page">
+      <h1 class="text-2xl font-extrabold sm:text-4xl">Кошик</h1>
+
+      <div data-cart-empty hidden class="card mt-6 p-8 text-center sm:p-12">
+        <p class="text-5xl">🧁</p>
+        <p class="mt-4 text-lg font-bold">У кошику поки порожньо</p>
+        <p class="mt-2 text-sm text-navy-soft">Оберіть щось смачне — і воно з'явиться тут.</p>
+        <a href={url('/katalog')} class="btn btn-primary mt-6">Перейти в каталог</a>
+      </div>
+
+      <div data-cart-content hidden class="mt-6 grid gap-6 lg:grid-cols-[1fr_360px] lg:items-start">
+        <div data-cart-items class="space-y-3"></div>
+
+        <aside class="card sticky top-24 p-5">
+          <h2 class="text-lg font-extrabold">Разом</h2>
+          <dl class="mt-4 space-y-2.5 text-sm">
+            <div class="flex justify-between"><dt class="text-navy-soft">Товари</dt><dd data-cart-subtotal class="font-bold">0 ₴</dd></div>
+            <div class="flex justify-between"><dt class="text-navy-soft">Доставка</dt><dd data-cart-delivery class="font-bold">150 ₴</dd></div>
+          </dl>
+          <div class="mt-4 flex items-baseline justify-between border-t border-navy/10 pt-4">
+            <span class="font-bold">До сплати</span>
+            <span data-cart-total class="text-2xl font-extrabold text-primary">0 ₴</span>
+          </div>
+          <p data-cart-hint class="mt-2 text-xs text-navy-soft"></p>
+
+          <button type="button" class="btn btn-primary mt-5 w-full py-4" data-checkout>Оформити замовлення</button>
+          <button type="button" class="btn btn-ghost mt-2 w-full text-sm" data-clear-cart>Очистити кошик</button>
+        </aside>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { getCart, setQty, removeFromCart, clearCart, cartTotal } from '../scripts/store.ts'
+  import { url } from '../lib/url'
+
+  const UNIT: Record<string, string> = { kg: 'за кг', pcs: 'за шт', set: 'за набір' }
+  const EMOJI: Record<string, string> = { cake: '🎂', donut: '🍩', cakepop: '🍭', other: '🎁' }
+  const DELIVERY = 150
+  const FREE_FROM = 1500
+  const money = (value: number) => `${new Intl.NumberFormat('uk-UA').format(value)} ₴`
+
+  const render = () => {
+    const cart = getCart()
+    const empty = document.querySelector<HTMLElement>('[data-cart-empty]')!
+    const content = document.querySelector<HTMLElement>('[data-cart-content]')!
+    empty.hidden = cart.length > 0
+    content.hidden = cart.length === 0
+    if (cart.length === 0) return
+
+    document.querySelector<HTMLElement>('[data-cart-items]')!.innerHTML = cart
+      .map(
+        (item) => `
+        <article class="card flex gap-3 p-3 sm:gap-4 sm:p-4">
+          <a href="${url(`/tovar/${item.slug}`)}" class="grid size-20 shrink-0 place-items-center rounded-xl bg-primary-soft text-3xl sm:size-24">${EMOJI[item.shape || 'cake'] || '🍰'}</a>
+          <div class="flex flex-1 flex-col">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="font-bold leading-snug"><a href="${url(`/tovar/${item.slug}`)}" class="hover:text-primary">${item.title}</a></h3>
+                <p class="mt-0.5 text-xs text-navy-soft">${money(item.price)} ${UNIT[item.unit] || ''}</p>
+              </div>
+              <button type="button" class="text-navy-soft transition hover:text-primary" data-remove="${item.id}" aria-label="Видалити">✕</button>
+            </div>
+            <div class="mt-auto flex items-center justify-between gap-3 pt-3">
+              <div class="flex items-center rounded-full border border-navy/12">
+                <button type="button" class="grid size-9 place-items-center text-lg text-navy-soft hover:text-primary" data-dec="${item.id}">−</button>
+                <span class="w-8 text-center text-sm font-bold">${item.qty}</span>
+                <button type="button" class="grid size-9 place-items-center text-lg text-navy-soft hover:text-primary" data-inc="${item.id}">+</button>
+              </div>
+              <span class="text-lg font-extrabold">${money(item.price * item.qty)}</span>
+            </div>
+          </div>
+        </article>`,
+      )
+      .join('')
+
+    const subtotal = cartTotal()
+    const delivery = subtotal >= FREE_FROM ? 0 : DELIVERY
+    document.querySelector('[data-cart-subtotal]')!.textContent = money(subtotal)
+    document.querySelector('[data-cart-delivery]')!.textContent = delivery === 0 ? 'безкоштовно' : money(delivery)
+    document.querySelector('[data-cart-total]')!.textContent = money(subtotal + delivery)
+    document.querySelector('[data-cart-hint]')!.textContent =
+      delivery === 0 ? 'Доставка безкоштовна — сума понад 1500 ₴' : `Ще ${money(FREE_FROM - subtotal)} до безкоштовної доставки`
+  }
+
+  document.addEventListener('click', (event) => {
+    const target = (event.target as HTMLElement).closest<HTMLElement>('[data-remove],[data-inc],[data-dec],[data-clear-cart],[data-checkout]')
+    if (!target) return
+    if (target.dataset.remove) removeFromCart(Number(target.dataset.remove))
+    if (target.dataset.inc) {
+      const item = getCart().find((entry) => entry.id === Number(target.dataset.inc))
+      if (item) setQty(item.id, item.qty + 1)
+    }
+    if (target.dataset.dec) {
+      const item = getCart().find((entry) => entry.id === Number(target.dataset.dec))
+      if (item) setQty(item.id, Math.max(1, item.qty - 1))
+    }
+    if (target.hasAttribute('data-clear-cart')) clearCart()
+    if (target.hasAttribute('data-checkout')) {
+      alert('Демо-версія: оформлення замовлення та оплата у цій збірці не підключені.')
+    }
+  })
+
+  document.addEventListener('store:change', render)
+  render()
+</script>

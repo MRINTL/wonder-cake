@@ -1,0 +1,76 @@
+---
+import Base from '../layouts/Base.astro'
+import ProductGrid from '../components/ProductGrid.astro'
+import { getProducts } from '../lib/payload'
+import { url } from '../lib/url'
+
+// Сайт статичний: віддаємо всі товари, а шукаємо по них у браузері
+const result = await getProducts({ limit: 100 })
+const suggestions = ['торт', 'пончики', 'кейкпопси', 'макарони', 'бенто', 'подарунок']
+---
+<Base title="Пошук">
+  <section class="border-b border-navy/8 bg-linear-to-b from-accent-soft/60 to-cream">
+    <div class="container-page py-8 sm:py-12">
+      <h1 data-search-title class="text-2xl font-extrabold sm:text-4xl">Що шукаємо?</h1>
+      <p data-search-count hidden class="mt-2 text-sm text-navy-soft"></p>
+
+      <form action={url('/poshuk')} method="get" class="mt-6 flex max-w-xl gap-2">
+        <input
+          type="search"
+          name="q"
+          data-search-query
+          placeholder="Торт, пончики, макарони…"
+          class="flex-1 rounded-full border border-navy/12 bg-white px-5 py-3.5 text-[15px] outline-none focus:border-primary"
+        />
+        <button type="submit" class="btn btn-primary py-3.5">Знайти</button>
+      </form>
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        <span class="py-1 text-sm text-navy-soft">Популярне:</span>
+        {suggestions.map((item) => (
+          <a href={url(`/poshuk?q=${encodeURIComponent(item)}`)} class="rounded-full bg-white px-3 py-1 text-sm font-semibold text-navy-soft shadow-[var(--shadow-soft)] hover:text-primary">
+            {item}
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section data-search-results hidden class="section">
+    <div class="container-page">
+      <ProductGrid products={result.docs} searchable />
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { plural } from '../lib/format'
+
+  const query = (new URLSearchParams(location.search).get('q') || '').trim()
+  const input = document.querySelector<HTMLInputElement>('[data-search-query]')!
+  input.value = query
+
+  if (!query) {
+    input.focus()
+  } else {
+    // Як і в CMS: без урахування регістру, усі слова запиту мають зустрітися в тексті товару
+    const words = query.toLowerCase().split(/\s+/)
+    const items = [...document.querySelectorAll<HTMLElement>('[data-product]')]
+    let found = 0
+    items.forEach((item) => {
+      item.hidden = !words.every((word) => (item.dataset.search || '').includes(word))
+      if (!item.hidden) found += 1
+    })
+
+    document.querySelector('[data-search-title]')!.textContent = `Результати за запитом «${query}»`
+    const count = document.querySelector<HTMLElement>('[data-search-count]')!
+    count.textContent = `${found} ${plural(found, 'товар', 'товари', 'товарів')}`
+    count.hidden = false
+
+    document.querySelector<HTMLElement>('[data-product-grid]')!.hidden = found === 0
+    document.querySelector<HTMLElement>('[data-grid-empty]')!.hidden = found > 0
+    document.querySelector('[data-grid-empty-text]')!.textContent = `За запитом «${query}» нічого не знайшли. Спробуйте коротше слово.`
+    document.querySelector<HTMLElement>('[data-search-results]')!.hidden = false
+    document.title = document.title.replace('Пошук', `Пошук: ${query}`)
+  }
+</script>

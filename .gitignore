@@ -1,0 +1,10 @@
+node_modules
+dist
+.next
+.astro
+*.db
+*.db-*
+.env
+.DS_Store
+apps/cms/media
+.backup

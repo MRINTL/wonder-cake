@@ -1,0 +1,63 @@
+---
+import type { Product } from '../lib/payload'
+import { formatPrice, priceMeta } from '../lib/format'
+import ProductImage from './ProductImage.astro'
+import Badge from './Badge.astro'
+import { url } from '../lib/url'
+
+type Props = { product: Product; class?: string }
+const { product, class: className = '' } = Astro.props
+
+const href = url(`/tovar/${product.slug}`)
+const payload = JSON.stringify({
+  id: product.id,
+  slug: product.slug,
+  title: product.title,
+  price: product.price,
+  unit: product.priceUnit,
+  shape: product.category?.shape || 'cake',
+})
+---
+<article class={`card group relative flex flex-col overflow-hidden transition-shadow hover:shadow-[var(--shadow-lift)] ${className}`}>
+  <a href={href} class="relative block aspect-square overflow-hidden bg-primary-soft">
+    <ProductImage shape={product.category?.shape} seed={product.id} image={product.image} alt={product.title} class="transition-transform duration-500 group-hover:scale-105" />
+  </a>
+
+  {product.badges && product.badges.length > 0 && (
+    <div class="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-1.5">
+      {product.badges.map((badge) => <Badge value={badge} />)}
+    </div>
+  )}
+
+  <button
+    type="button"
+    class="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-white/90 text-navy shadow-sm backdrop-blur transition hover:text-primary data-[active=true]:text-primary"
+    data-fav-toggle={payload}
+    aria-label="Додати в обране"
+  >
+    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path class="fav-fill" d="M12 20.5S3.8 15.4 3.8 9.7A4.7 4.7 0 0 1 12 6.6a4.7 4.7 0 0 1 8.2 3.1c0 5.7-8.2 10.8-8.2 10.8z" stroke-linejoin="round" />
+    </svg>
+  </button>
+
+  <div class="flex flex-1 flex-col p-4">
+    <p class="text-xs font-semibold uppercase tracking-wide text-accent">{product.category?.title}</p>
+    <h3 class="mt-1 text-base font-bold leading-snug">
+      <a href={href} class="hover:text-primary">{product.title}</a>
+    </h3>
+    <p class="mt-1.5 line-clamp-3 text-sm leading-relaxed text-navy-soft">{product.shortDescription}</p>
+
+    <div class="mt-auto flex flex-col gap-3 pt-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <div class="flex items-baseline gap-2">
+          <span class="text-xl font-extrabold">{formatPrice(product.price)} ₴</span>
+          {product.oldPrice && <span class="text-sm text-navy-soft line-through">{formatPrice(product.oldPrice)} ₴</span>}
+        </div>
+        <p class="text-xs text-navy-soft">{priceMeta(product)}</p>
+      </div>
+      <button type="button" class="btn btn-primary w-full px-4 py-2.5 text-sm sm:w-auto" data-add-to-cart={payload}>
+        У кошик
+      </button>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro'
+import PageHero from '../../components/PageHero.astro'
+import ProductCard from '../../components/ProductCard.astro'
+import SectionHeading from '../../components/SectionHeading.astro'
+import { getHolidays, getProducts } from '../../lib/payload'
+import { url } from '../../lib/url'
+
+const holidays = await getHolidays()
+const sections = await Promise.all(
+  holidays.map(async (holiday) => ({
+    holiday,
+    products: (await getProducts({ holidaySlug: holiday.slug, limit: 4 })).docs,
+  })),
+)
+---
+<Base title="Свята" description="Добірки десертів до дня народження, весілля, Нового року, 8 березня та дитячих свят.">
+  <PageHero
+    eyebrow="Свята"
+    title="Добірки до свят"
+    text="Ми зібрали десерти за приводами — щоб не гортати весь каталог, коли до свята лишилося два дні."
+  />
+
+  <section class="section">
+    <div class="container-page">
+      <div class="flex flex-wrap gap-2">
+        {holidays.map((holiday) => (
+          <a href={url(`/svyata/${holiday.slug}`)} class="btn btn-outline px-4 py-2.5 text-sm">
+            <span>{holiday.emoji}</span> {holiday.title}
+          </a>
+        ))}
+      </div>
+
+      <div class="mt-10 space-y-12">
+        {sections.filter((section) => section.products.length > 0).map((section) => (
+          <div>
+            <div class="flex flex-wrap items-end justify-between gap-3">
+              <SectionHeading
+                eyebrow={section.holiday.date}
+                title={`${section.holiday.emoji || ''} ${section.holiday.title}`.trim()}
+                text={section.holiday.description}
+              />
+              <a href={url(`/svyata/${section.holiday.slug}`)} class="btn btn-ghost text-sm">Дивитись усе →</a>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+              {section.products.map((product) => <ProductCard product={product} />)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>

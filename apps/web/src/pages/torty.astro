@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro'
+import PageHero from '../components/PageHero.astro'
+import CatalogFilters from '../components/CatalogFilters.astro'
+import ProductGrid from '../components/ProductGrid.astro'
+import { getCategories, getProducts } from '../lib/payload'
+
+const [allCategories, result] = await Promise.all([
+  getCategories(),
+  getProducts({ categoryGroup: 'cakes', limit: 100 }),
+])
+const categories = allCategories.filter((category) => category.group === 'cakes')
+---
+<Base title="Торти" description="Бісквітні, мусові, весільні та бенто-торти на замовлення з доставкою по Києву.">
+  <PageHero
+    eyebrow="Торти"
+    title="Торти на замовлення"
+    text="Збираємо під конкретну дату — від бенто на двох до триярусного весільного. Мінімальний строк — 48 годин."
+    count={result.totalDocs}
+  />
+  <section class="section">
+    <div class="container-page">
+      <CatalogFilters categories={categories} />
+      <div class="mt-8">
+        <ProductGrid products={result.docs} empty="У цій категорії поки порожньо." />
+      </div>
+
+      <div class="mt-10 grid gap-4 sm:grid-cols-3">
+        {[
+          { title: '48 годин', text: 'мінімальний строк на торт з каталогу' },
+          { title: '10 днів', text: 'на багатоярусні та складний декор' },
+          { title: '150–200 г', text: 'орієнтир ваги на одного гостя' },
+        ].map((item) => (
+          <div class="card p-5">
+            <p class="text-2xl font-extrabold text-primary">{item.title}</p>
+            <p class="mt-1 text-sm text-navy-soft">{item.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>

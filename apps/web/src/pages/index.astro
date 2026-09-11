@@ -1,0 +1,129 @@
+---
+import Base from '../layouts/Base.astro'
+import SectionHeading from '../components/SectionHeading.astro'
+import CategoryCard from '../components/CategoryCard.astro'
+import ProductCard from '../components/ProductCard.astro'
+import ProductImage from '../components/ProductImage.astro'
+import Faq from '../components/Faq.astro'
+import { getCategories, getHome, getProducts, mediaUrl } from '../lib/payload'
+import { formatNumber } from '../lib/format'
+import { url } from '../lib/url'
+
+const [home, categories, bestsellers] = await Promise.all([
+  getHome(),
+  getCategories(),
+  getProducts({ limit: 8, sort: '-orders' }),
+])
+
+const counts = await Promise.all(
+  categories.map(async (category) => (await getProducts({ categorySlug: category.slug, limit: 1 })).totalDocs),
+)
+
+const counters = [
+  { value: formatNumber(home.counters.donuts), label: home.counters.donutsLabel },
+  { value: formatNumber(home.counters.cakesKg), label: home.counters.cakesLabel },
+  { value: formatNumber(home.counters.years || 0), label: home.counters.yearsLabel },
+].filter((item) => item.label)
+
+const heroImage = mediaUrl(home.hero.image, 'hero')
+const ctaImage = mediaUrl(home.cta.image, 'hero')
+---
+
+<Base title="" description={home.hero.text}>
+  <!-- HERO -->
+  <section class="relative overflow-hidden bg-linear-to-b from-primary-soft/70 to-cream">
+    <div class="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-accent/25 blur-3xl"></div>
+    <div class="container-page relative grid gap-10 py-10 sm:py-14 lg:grid-cols-2 lg:items-center lg:gap-14 lg:py-20">
+      <div class="rise">
+        {home.hero.eyebrow && (
+          <p class="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider text-primary shadow-[var(--shadow-soft)]">
+            <span class="size-1.5 rounded-full bg-accent"></span>{home.hero.eyebrow}
+          </p>
+        )}
+        <h1 class="mt-5 text-[2rem] font-extrabold leading-[1.08] sm:text-5xl lg:text-6xl">{home.hero.title}</h1>
+        <p class="mt-4 max-w-xl text-[15px] leading-relaxed text-navy-soft sm:text-lg">{home.hero.text}</p>
+
+        <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+          <a href={url(home.hero.primaryHref || '/katalog')} class="btn btn-primary sm:px-7 sm:py-4 sm:text-base">{home.hero.primaryLabel}</a>
+          <a href={url(home.hero.secondaryHref || '/torty')} class="btn btn-outline sm:px-7 sm:py-4 sm:text-base">{home.hero.secondaryLabel}</a>
+        </div>
+
+        <dl class="mt-9 grid grid-cols-3 gap-3 sm:gap-5">
+          {counters.map((counter) => (
+            <div class="rounded-2xl bg-white/80 p-3 text-center shadow-[var(--shadow-soft)] backdrop-blur sm:p-4">
+              <dt class="text-xl font-extrabold text-primary sm:text-3xl">{counter.value}</dt>
+              <dd class="mt-1 text-[11px] font-semibold leading-tight text-navy-soft sm:text-xs">{counter.label}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      <div class="rise relative">
+        <div class="aspect-square overflow-hidden rounded-[2rem] bg-white shadow-[var(--shadow-lift)] sm:rounded-[2.5rem]">
+          {heroImage
+            ? <img src={heroImage} alt={home.hero.title} class="h-full w-full object-cover" />
+            : <ProductImage shape="cake" seed={0} alt={home.hero.title} />}
+        </div>
+        <div class="absolute -bottom-4 left-4 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[var(--shadow-lift)] sm:left-8">
+          <span class="grid size-9 place-items-center rounded-full bg-accent-soft text-lg">🚚</span>
+          <span class="text-xs font-bold leading-tight">Доставка<br /><span class="font-semibold text-navy-soft">за 2 години по Києву</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ВАРІАНТИ ТОВАРУ -->
+  <section class="section">
+    <div class="container-page">
+      <SectionHeading eyebrow="Варіанти товару" title={home.variants.title || 'Що будемо святкувати?'} text={home.variants.text} />
+      <div class="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+        {categories.map((category, index) => <CategoryCard category={category} count={counts[index]} />)}
+      </div>
+    </div>
+  </section>
+
+  <!-- НАЙЧАСТІШЕ ЗАМОВЛЯЮТЬ -->
+  <section class="section bg-white">
+    <div class="container-page">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <SectionHeading eyebrow="Бестселери" title={home.bestsellers.title || 'Найчастіше замовляють'} text={home.bestsellers.text} />
+        <a href={url('/katalog')} class="btn btn-outline hidden sm:inline-flex">Весь каталог →</a>
+      </div>
+      <div class="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+        {bestsellers.docs.slice(0, home.bestsellers.limit || 8).map((product) => <ProductCard product={product} />)}
+      </div>
+      <div class="mt-8 flex justify-center sm:hidden">
+        <a href={url('/katalog')} class="btn btn-primary w-full">Весь каталог</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section">
+    <div class="container-page">
+      <div class="grid overflow-hidden rounded-[2rem] bg-navy text-white lg:grid-cols-2">
+        <div class="p-7 sm:p-10 lg:p-14">
+          <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-accent">Індивідуальне замовлення</p>
+          <h2 class="mt-3 text-2xl font-extrabold sm:text-4xl">{home.cta.title}</h2>
+          <p class="mt-4 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">{home.cta.text}</p>
+          <a href={url(home.cta.buttonHref || '/kontakty')} class="btn btn-primary mt-7 sm:px-7 sm:py-4 sm:text-base">{home.cta.buttonLabel}</a>
+        </div>
+        <div class="relative min-h-56 bg-primary/20 lg:min-h-full">
+          {ctaImage
+            ? <img src={ctaImage} alt={home.cta.title} class="h-full w-full object-cover" />
+            : <ProductImage shape="cakepop" seed={3} alt={home.cta.title} />}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  {home.faq.items && home.faq.items.length > 0 && (
+    <section class="section bg-white">
+      <div class="container-page">
+        <SectionHeading eyebrow="FAQ" title={home.faq.title || 'Питання та відповіді'} align="center" class="mb-8" />
+        <Faq items={home.faq.items} />
+      </div>
+    </section>
+  )}
+</Base>

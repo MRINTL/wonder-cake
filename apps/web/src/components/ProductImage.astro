@@ -1,0 +1,87 @@
+---
+/** SVG-заглушка замість фото: форма залежить від категорії, палітра — від id товару */
+import { mediaUrl, type Media } from '../lib/payload'
+
+type Props = {
+  shape?: 'cake' | 'donut' | 'cakepop' | 'other'
+  seed?: number
+  image?: Media | null
+  alt?: string
+  class?: string
+  sizeName?: string
+}
+
+const { shape = 'cake', seed = 0, image = null, alt = '', class: className = '', sizeName = 'card' } = Astro.props
+
+const PALETTES = [
+  { bg: '#fde7f1', a: '#e20b6c', b: '#f9a8cd', c: '#69cdde' },
+  { bg: '#e6f7fa', a: '#69cdde', b: '#bfe9f1', c: '#e20b6c' },
+  { bg: '#fdf4e7', a: '#f0a35e', b: '#f8d6ad', c: '#e20b6c' },
+  { bg: '#f1eefc', a: '#8f7ae5', b: '#cfc6f5', c: '#69cdde' },
+]
+const p = PALETTES[Math.abs(seed) % PALETTES.length]
+const url = mediaUrl(image, sizeName)
+const id = `g${shape}${Math.abs(seed)}`
+---
+
+{url ? (
+  <img src={url} alt={image?.alt || alt} class={`h-full w-full object-cover ${className}`} loading="lazy" decoding="async" />
+) : (
+  <svg viewBox="0 0 400 400" role="img" aria-label={alt} class={`h-full w-full ${className}`} style={`background:${p.bg}`}>
+    <defs>
+      <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color={p.a} />
+        <stop offset="100%" stop-color={p.b} />
+      </linearGradient>
+    </defs>
+    <circle cx="330" cy="70" r="46" fill={p.c} opacity="0.25" />
+    <circle cx="58" cy="330" r="30" fill={p.a} opacity="0.16" />
+
+    {shape === 'cake' && (
+      <g>
+        <rect x="196" y="86" width="8" height="42" rx="4" fill={p.c} />
+        <path d="M200 66c10 10 12 18 4 24-8 6-16-2-12-12 2-5 6-8 8-12z" fill={p.a} />
+        <rect x="96" y="228" width="208" height="76" rx="20" fill={`url(#${id})`} />
+        <rect x="118" y="170" width="164" height="66" rx="18" fill={p.a} opacity="0.82" />
+        <rect x="140" y="126" width="120" height="52" rx="16" fill={p.b} />
+        <path d="M96 244c14 16 30-6 44 8s28-8 42 6 30-10 44 4 26-6 38 6" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.85" />
+        <rect x="82" y="298" width="236" height="16" rx="8" fill={p.a} opacity="0.35" />
+      </g>
+    )}
+
+    {shape === 'donut' && (
+      <g>
+        <circle cx="200" cy="208" r="118" fill={`url(#${id})`} />
+        <path d="M200 96c62 0 112 50 112 112 0 16-4 30-10 44-22-10-30-34-56-34-30 0-30 30-60 30s-34-28-62-28c-18 0-26 10-34 22-8-20-12-34-12-46C88 146 138 96 200 96z" fill={p.c} opacity="0.9" />
+        <circle cx="200" cy="208" r="42" fill={p.bg} />
+        <g fill="#fff">
+          <rect x="150" y="150" width="22" height="8" rx="4" transform="rotate(-25 150 150)" />
+          <rect x="232" y="164" width="22" height="8" rx="4" transform="rotate(35 232 164)" />
+          <rect x="186" y="126" width="22" height="8" rx="4" transform="rotate(12 186 126)" />
+          <rect x="258" y="216" width="22" height="8" rx="4" transform="rotate(-20 258 216)" />
+          <rect x="126" y="212" width="22" height="8" rx="4" transform="rotate(48 126 212)" />
+        </g>
+      </g>
+    )}
+
+    {shape === 'cakepop' && (
+      <g>
+        <rect x="192" y="196" width="16" height="150" rx="8" fill="#e9dfd4" />
+        <circle cx="200" cy="164" r="86" fill={`url(#${id})`} />
+        <path d="M124 132c22-32 60-46 96-38 30 6 52 26 62 52-18 16-40-6-62 4-26 12-24 36-52 34-24-2-32-30-44-52z" fill={p.c} opacity="0.75" />
+        <circle cx="172" cy="130" r="9" fill="#fff" opacity="0.9" />
+        <circle cx="228" cy="152" r="6" fill="#fff" opacity="0.7" />
+        <circle cx="196" cy="188" r="7" fill="#fff" opacity="0.55" />
+      </g>
+    )}
+
+    {shape === 'other' && (
+      <g>
+        <rect x="104" y="176" width="192" height="132" rx="20" fill={`url(#${id})`} />
+        <rect x="88" y="146" width="224" height="52" rx="16" fill={p.b} />
+        <rect x="184" y="146" width="32" height="162" fill={p.c} opacity="0.85" />
+        <path d="M200 146c-18-34-58-40-64-16-4 16 24 24 64 16zM200 146c18-34 58-40 64-16 4 16-24 24-64 16z" fill={p.c} />
+      </g>
+    )}
+  </svg>
+)}

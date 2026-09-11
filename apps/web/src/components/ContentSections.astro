@@ -1,0 +1,16 @@
+---
+type Props = { sections?: { heading?: string; body: string }[] }
+const { sections = [] } = Astro.props
+---
+<div class="mx-auto max-w-3xl space-y-8">
+  {sections.map((section) => (
+    <section>
+      {section.heading && <h2 class="text-xl font-extrabold sm:text-2xl">{section.heading}</h2>}
+      <div class="mt-3 space-y-3">
+        {section.body.split('\n\n').map((paragraph) => (
+          <p class="text-[15px] leading-relaxed text-navy-soft sm:text-base">{paragraph}</p>
+        ))}
+      </div>
+    </section>
+  ))}
+</div>

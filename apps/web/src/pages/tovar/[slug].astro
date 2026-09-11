@@ -1,0 +1,170 @@
+---
+import Base from '../../layouts/Base.astro'
+import ProductImage from '../../components/ProductImage.astro'
+import ProductCard from '../../components/ProductCard.astro'
+import Badge from '../../components/Badge.astro'
+import SectionHeading from '../../components/SectionHeading.astro'
+import type { GetStaticPaths } from 'astro'
+import { getProducts, type Product } from '../../lib/payload'
+import { ALLERGEN_LABEL, formatDecimal, formatPrice, priceMeta } from '../../lib/format'
+import { url } from '../../lib/url'
+
+export const getStaticPaths = (async () => {
+  const { docs } = await getProducts({ limit: 100 })
+  return docs.map((product) => ({
+    params: { slug: product.slug },
+    props: {
+      product,
+      relatedProducts: docs
+        .filter((item) => item.id !== product.id && item.category?.slug === product.category?.slug)
+        .slice(0, 4),
+    },
+  }))
+}) satisfies GetStaticPaths
+
+type Props = { product: Product; relatedProducts: Product[] }
+const { product, relatedProducts } = Astro.props
+
+const cartPayload = JSON.stringify({
+  id: product.id,
+  slug: product.slug,
+  title: product.title,
+  price: product.price,
+  unit: product.priceUnit,
+  shape: product.category?.shape || 'cake',
+})
+
+const specs = [
+  product.priceUnit === 'kg' && product.minWeight ? { label: 'Мінімальна вага', value: `${formatDecimal(product.minWeight)} кг` } : null,
+  product.size ? { label: 'Фасування', value: product.size } : null,
+  product.calories ? { label: 'Калорійність', value: `${product.calories} ккал / 100 г` } : null,
+  product.allergens?.length ? { label: 'Алергени', value: product.allergens.map((a) => ALLERGEN_LABEL[a] || a).join(', ') } : null,
+].filter(Boolean) as { label: string; value: string }[]
+---
+<Base title={product.title} description={product.shortDescription}>
+  <div class="container-page py-4">
+    <nav class="flex flex-wrap items-center gap-1.5 text-xs text-navy-soft sm:text-sm">
+      <a href={url('/')} class="hover:text-primary">Головна</a><span>/</span>
+      <a href={url('/katalog')} class="hover:text-primary">Каталог</a><span>/</span>
+      <a href={url(`/katalog?kategoriya=${product.category?.slug}`)} class="hover:text-primary">{product.category?.title}</a>
+    </nav>
+  </div>
+
+  <section class="pb-4">
+    <div class="container-page grid gap-8 lg:grid-cols-2 lg:gap-12">
+      <div>
+        <div class="relative aspect-square overflow-hidden rounded-[2rem] bg-primary-soft shadow-[var(--shadow-soft)]">
+          <ProductImage shape={product.category?.shape} seed={product.id} image={product.image} alt={product.title} sizeName="hero" />
+          {product.badges && product.badges.length > 0 && (
+            <div class="absolute left-4 top-4 flex flex-wrap gap-2">
+              {product.badges.map((badge) => <Badge value={badge} />)}
+            </div>
+          )}
+        </div>
+        {product.gallery && product.gallery.length > 0 && (
+          <div class="mt-3 grid grid-cols-4 gap-3">
+            {product.gallery.slice(0, 4).map((item) => (
+              <div class="aspect-square overflow-hidden rounded-xl bg-white">
+                <ProductImage image={item.image} seed={product.id} shape={product.category?.shape} alt={product.title} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-accent">{product.category?.title}</p>
+        <h1 class="mt-2 text-2xl font-extrabold sm:text-4xl">{product.title}</h1>
+        <p class="mt-3 text-[15px] leading-relaxed text-navy-soft sm:text-base">{product.shortDescription}</p>
+
+        <div class="mt-6 flex flex-wrap items-end gap-3">
+          <span class="text-3xl font-extrabold sm:text-4xl">{formatPrice(product.price)} ₴</span>
+          {product.oldPrice && <span class="text-lg text-navy-soft line-through">{formatPrice(product.oldPrice)} ₴</span>}
+          <span class="pb-1 text-sm font-semibold text-navy-soft">{priceMeta(product)}</span>
+        </div>
+
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <div class="flex items-center rounded-full border border-navy/12 bg-white">
+            <button type="button" class="grid size-11 place-items-center text-xl text-navy-soft hover:text-primary" data-qty-minus aria-label="Менше">−</button>
+            <input type="number" value="1" min="1" max="99" data-qty-input class="w-10 border-none bg-transparent text-center text-base font-bold outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" />
+            <button type="button" class="grid size-11 place-items-center text-xl text-navy-soft hover:text-primary" data-qty-plus aria-label="Більше">+</button>
+          </div>
+          <button type="button" class="btn btn-primary flex-1 py-4 text-base sm:flex-none sm:px-8" data-add-to-cart={cartPayload} data-use-qty>
+            Додати в кошик
+          </button>
+          <button type="button" class="btn btn-outline size-13 !p-0 data-[active=true]:border-primary data-[active=true]:text-primary" data-fav-toggle={cartPayload} aria-label="В обране">
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">
+              <path class="fav-fill" d="M12 20.5S3.8 15.4 3.8 9.7A4.7 4.7 0 0 1 12 6.6a4.7 4.7 0 0 1 8.2 3.1c0 5.7-8.2 10.8-8.2 10.8z" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="mt-6 grid gap-3 rounded-2xl bg-accent-soft/60 p-4 text-sm sm:grid-cols-2">
+          <p class="flex gap-2"><span>🚚</span> Доставка по Києву за 2 години</p>
+          <p class="flex gap-2"><span>❄️</span> Зберігати в холодильнику</p>
+          <p class="flex gap-2"><span>🎂</span> Торти — мінімум за 48 годин</p>
+          <p class="flex gap-2"><span>💳</span> Оплата карткою або при отриманні</p>
+        </div>
+
+        {product.description && (
+          <div class="mt-8">
+            <h2 class="text-lg font-extrabold">Опис</h2>
+            <p class="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-navy-soft">{product.description}</p>
+          </div>
+        )}
+
+        {product.ingredients && (
+          <div class="mt-6">
+            <h2 class="text-lg font-extrabold">Склад</h2>
+            <p class="mt-2 text-[15px] leading-relaxed text-navy-soft">{product.ingredients}</p>
+          </div>
+        )}
+
+        {specs.length > 0 && (
+          <dl class="mt-6 divide-y divide-navy/8 overflow-hidden rounded-2xl bg-white shadow-[var(--shadow-soft)]">
+            {specs.map((spec) => (
+              <div class="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+                <dt class="text-navy-soft">{spec.label}</dt>
+                <dd class="text-right font-bold">{spec.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+
+        {product.holidays && product.holidays.length > 0 && (
+          <div class="mt-6">
+            <p class="text-sm font-semibold text-navy-soft">Часто беруть на:</p>
+            <div class="mt-2 flex flex-wrap gap-2">
+              {product.holidays.map((holiday) => (
+                <a href={url(`/svyata/${holiday.slug}`)} class="rounded-full bg-primary-soft px-3.5 py-1.5 text-sm font-semibold text-primary hover:bg-primary hover:text-white">
+                  {holiday.emoji} {holiday.title}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  {relatedProducts.length > 0 && (
+    <section class="section">
+      <div class="container-page">
+        <SectionHeading title="Схожі десерти" text={`Ще з категорії «${product.category?.title}»`} />
+        <div class="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+          {relatedProducts.map((item) => <ProductCard product={item} />)}
+        </div>
+      </div>
+    </section>
+  )}
+</Base>
+
+<script>
+  const input = document.querySelector<HTMLInputElement>('[data-qty-input]')
+  const step = (delta: number) => {
+    if (!input) return
+    input.value = String(Math.min(99, Math.max(1, (Number(input.value) || 1) + delta)))
+  }
+  document.querySelector('[data-qty-minus]')?.addEventListener('click', () => step(-1))
+  document.querySelector('[data-qty-plus]')?.addEventListener('click', () => step(1))
+</script>

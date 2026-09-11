@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro'
+import { url } from '../lib/url'
+---
+<Base title="Вхід">
+  <section class="section">
+    <div class="container-page">
+      <div class="mx-auto max-w-md card p-6 text-center sm:p-8">
+        <p class="text-5xl">🔐</p>
+        <h1 class="mt-4 text-2xl font-extrabold">Особистий кабінет</h1>
+        <p class="mt-3 text-sm leading-relaxed text-navy-soft">
+          У демо-версії вхід і реєстрація вимкнені — сайт працює без сервера.
+          Кошик та обране при цьому зберігаються у вашому браузері.
+        </p>
+        <div class="mt-6 flex flex-col gap-2">
+          <a href={url('/katalog')} class="btn btn-primary">Перейти в каталог</a>
+          <a href={url('/koshyk')} class="btn btn-outline">Мій кошик</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

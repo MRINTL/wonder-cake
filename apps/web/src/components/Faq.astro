@@ -2,14 +2,71 @@
 type Props = { items: { question: string; answer: string }[] }
 const { items } = Astro.props
 ---
-<div class="mx-auto max-w-3xl divide-y divide-navy/10 overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-soft)]">
+<div class="overflow-hidden rounded-[var(--radius-card)] border border-primary-soft bg-cream px-5 sm:px-7">
   {items.map((item, index) => (
-    <details class="group" open={index === 0}>
-      <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-[15px] font-bold sm:text-base">
+    <details class="group border-b border-navy/8 last:border-b-0" open={index === 0} data-faq data-open={index === 0 ? '' : undefined}>
+      <summary class="flex cursor-pointer list-none items-center justify-between gap-4 py-5 text-[15px] font-bold sm:text-[17px]">
         {item.question}
-        <span class="grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-primary transition-transform group-open:rotate-45">+</span>
+        <span class="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft text-primary transition-colors group-data-open:bg-primary group-data-open:text-white">
+          <svg viewBox="0 0 24 24" class="size-4 transition-transform duration-200 group-data-open:rotate-45" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </span>
       </summary>
-      <p class="px-5 pb-5 text-sm leading-relaxed text-navy-soft sm:text-[15px]">{item.answer}</p>
+      <div class="overflow-hidden" data-faq-body>
+        <p class="pb-5 pr-12 text-sm leading-relaxed text-navy-soft sm:text-[15px]">{item.answer}</p>
+      </div>
     </details>
   ))}
 </div>
+
+<script>
+  /** Плавне розгортання відповідей: анімуємо висоту, <details> лишається семантичним */
+  const DURATION = 260
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+  document.querySelectorAll<HTMLDetailsElement>('[data-faq]').forEach((details) => {
+    const summary = details.querySelector('summary')
+    const body = details.querySelector<HTMLElement>('[data-faq-body]')
+    if (!summary || !body) return
+
+    let animation: Animation | null = null
+
+    const setOpen = (open: boolean) => {
+      details.open = open
+      if (open) details.dataset.open = ''
+      else delete details.dataset.open
+    }
+
+    const slide = (from: number, to: number, open: boolean) => {
+      animation?.cancel()
+      animation = body.animate(
+        { height: [`${from}px`, `${to}px`], opacity: [open ? 0 : 1, open ? 1 : 0] },
+        { duration: DURATION, easing: 'ease' },
+      )
+      animation.addEventListener('finish', () => {
+        animation = null
+        setOpen(open)
+      })
+    }
+
+    summary.addEventListener('click', (event) => {
+      // Без анімації нативна поведінка <details> лишається як є
+      if (reduceMotion.matches) {
+        requestAnimationFrame(() => setOpen(details.open))
+        return
+      }
+
+      event.preventDefault()
+
+      if (details.open) {
+        // Закриваємо: вміст ще показано, тому висоту знімаємо зараз
+        delete details.dataset.open
+        slide(body.offsetHeight, 0, false)
+      } else {
+        setOpen(true)
+        slide(0, body.scrollHeight, true)
+      }
+    })
+  })
+</script>

@@ -1,118 +1,239 @@
 ---
 import Base from '../layouts/Base.astro'
-import SectionHeading from '../components/SectionHeading.astro'
-import CategoryCard from '../components/CategoryCard.astro'
 import ProductCard from '../components/ProductCard.astro'
 import ProductImage from '../components/ProductImage.astro'
 import Faq from '../components/Faq.astro'
-import { getCategories, getHome, getProducts, mediaUrl } from '../lib/payload'
-import { formatNumber } from '../lib/format'
+import { getHolidays, getHome, getProducts, mediaUrl, type Holiday } from '../lib/payload'
+import { formatNumber, plural } from '../lib/format'
 import { url } from '../lib/url'
 
-const [home, categories, bestsellers] = await Promise.all([
+const [home, holidays, bestsellers] = await Promise.all([
   getHome(),
-  getCategories(),
+  getHolidays(),
   getProducts({ limit: 8, sort: '-orders' }),
 ])
 
-const counts = await Promise.all(
-  categories.map(async (category) => (await getProducts({ categorySlug: category.slug, limit: 1 })).totalDocs),
+// Чотири приводи з найбільшими добірками
+const holidayCards = (
+  await Promise.all(
+    holidays.map(async (holiday) => ({
+      holiday,
+      count: (await getProducts({ holidaySlug: holiday.slug, limit: 1 })).totalDocs,
+    })),
+  )
 )
+  .sort((a, b) => b.count - a.count)
+  .slice(0, 4)
 
-const counters = [
+/** Ілюстрація-заглушка під свято: форма добирається за слагом */
+const HOLIDAY_SHAPE: Record<string, 'cake' | 'donut' | 'cakepop' | 'other'> = {
+  'den-narodzhennia': 'cake',
+  vesillia: 'cake',
+  'dytiache-sviato': 'cakepop',
+  'novyi-rik': 'donut',
+  '8-bereznia': 'other',
+}
+const shapeFor = (holiday: Holiday) => HOLIDAY_SHAPE[holiday.slug] || 'other'
+
+// Лічильники з CMS: три цифри під кнопками в банері
+const FACTS = [
   { value: formatNumber(home.counters.donuts), label: home.counters.donutsLabel },
   { value: formatNumber(home.counters.cakesKg), label: home.counters.cakesLabel },
   { value: formatNumber(home.counters.years || 0), label: home.counters.yearsLabel },
-].filter((item) => item.label)
+].filter((fact) => fact.label)
 
-const heroImage = mediaUrl(home.hero.image, 'hero')
-const ctaImage = mediaUrl(home.cta.image, 'hero')
+// Тексти, яких поки немає в CMS — живуть тут, як і факти на сторінках «Торти» й «Десерти»
+const TICKER = ['Торти — від 3 днів', 'Пончики — день у день', 'Самовивіз на Лівобережній', 'Нова пошта: вересень — травень']
+const STEPS = [
+  { num: '01', title: 'Обираєте десерт', text: 'У каталозі або за власним ескізом. Склад і алергени пишемо на кожній сторінці товару.' },
+  { num: '02', title: 'Узгоджуємо деталі', text: 'Передзвонюємо, рахуємо кількість порцій під гостей і фіксуємо дату.' },
+  { num: '03', title: 'Привозимо вчасно', text: 'Доставка таксі по Києву або самовивіз на вул. Дениса Рачінського, 25.' },
+]
+
+const heroImage = mediaUrl(home.hero.image, 'hero') || url('/hero.jpg')
 ---
 
 <Base title="" description={home.hero.text}>
   <!-- HERO -->
-  <section class="relative overflow-hidden bg-linear-to-b from-primary-soft/70 to-cream">
-    <div class="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-accent/25 blur-3xl"></div>
-    <div class="container-page relative grid gap-10 py-10 sm:py-14 lg:grid-cols-2 lg:items-center lg:gap-14 lg:py-20">
-      <div class="rise">
-        {home.hero.eyebrow && (
-          <p class="inline-flex items-center gap-2 rounded-full bg-white px-3.5 py-1.5 text-xs font-extrabold uppercase tracking-wider text-primary shadow-[var(--shadow-soft)]">
-            <span class="size-1.5 rounded-full bg-accent"></span>{home.hero.eyebrow}
-          </p>
-        )}
-        <h1 class="mt-5 text-[2rem] font-extrabold leading-[1.08] sm:text-5xl lg:text-6xl">{home.hero.title}</h1>
-        <p class="mt-4 max-w-xl text-[15px] leading-relaxed text-navy-soft sm:text-lg">{home.hero.text}</p>
+  <!-- Без overflow-hidden на секції: він обрізав тінь картки внизу. Ховаємо тільки декоративне коло -->
+  <section class="relative">
+    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <div class="absolute -bottom-40 -left-28 size-72 rounded-full bg-accent-soft"></div>
+    </div>
 
-        <div class="mt-7 flex flex-col gap-3 sm:flex-row">
-          <a href={url(home.hero.primaryHref || '/katalog')} class="btn btn-primary sm:px-7 sm:py-4 sm:text-base">{home.hero.primaryLabel}</a>
-          <a href={url(home.hero.secondaryHref || '/torty')} class="btn btn-outline sm:px-7 sm:py-4 sm:text-base">{home.hero.secondaryLabel}</a>
+    <div class="container-page relative flex flex-col gap-8 py-10 sm:py-14 lg:min-h-[560px] lg:justify-center lg:py-12">
+      <div class="rise lg:max-w-[540px]">
+        {home.hero.eyebrow && (
+          <span class="inline-flex h-10 items-center gap-2.5 rounded-full border border-primary/15 bg-white px-4 text-[13px] font-bold tracking-wide text-primary-dark">
+            <span class="size-2 rounded-full bg-primary"></span>{home.hero.eyebrow}
+          </span>
+        )}
+
+        <!-- Кожен рядок балансуємо окремо: «РОЗКАЖІТЬ / ПРО СВЯТО» + «МИ СТВОРИМО / ДЕСЕРТ» -->
+        <h1 class="mt-6 font-display text-[2.7rem] font-bold uppercase leading-[0.92] tracking-[-0.01em] sm:text-[3.4rem] lg:text-[4.5rem]">
+          <span class="block text-balance">{home.hero.title}</span>
+          {home.hero.titleAccent && <span class="block text-balance text-primary">{home.hero.titleAccent}</span>}
+        </h1>
+
+        <p class="mt-6 max-w-md text-[15px] leading-relaxed text-navy-soft sm:text-lg">{home.hero.text}</p>
+
+        <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-7">
+          <a href={url(home.hero.primaryHref || '/katalog')} class="btn btn-primary shadow-[0_16px_32px_-18px_rgba(226,11,108,0.75)] sm:px-7 sm:py-4 sm:text-base">
+            {home.hero.primaryLabel}
+            <svg viewBox="0 0 24 24" class="size-4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </a>
+          <a href={url(home.hero.secondaryHref || '/kontakty')} class="self-start border-b-2 border-dotted border-primary/40 pb-1 font-bold text-primary-dark hover:border-primary">
+            {home.hero.secondaryLabel}
+          </a>
         </div>
 
-        <dl class="mt-9 grid grid-cols-3 gap-3 sm:gap-5">
-          {counters.map((counter) => (
-            <div class="rounded-2xl bg-white/80 p-3 text-center shadow-[var(--shadow-soft)] backdrop-blur sm:p-4">
-              <dt class="text-xl font-extrabold text-primary sm:text-3xl">{counter.value}</dt>
-              <dd class="mt-1 text-[11px] font-semibold leading-tight text-navy-soft sm:text-xs">{counter.label}</dd>
+        <dl class="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
+          {FACTS.map((fact, index) => (
+            <div class={`flex min-w-0 flex-col gap-0.5 ${index > 0 ? 'border-l border-navy/10 pl-3 sm:pl-6' : ''}`}>
+              <dt class="font-display text-base font-semibold leading-tight sm:whitespace-nowrap sm:text-2xl lg:text-[26px]">{fact.value}</dt>
+              <dd class="text-[13px] leading-snug text-navy-soft">{fact.label}</dd>
             </div>
           ))}
         </dl>
       </div>
 
-      <div class="rise relative">
-        <div class="aspect-square overflow-hidden rounded-[2rem] bg-white shadow-[var(--shadow-lift)] sm:rounded-[2.5rem]">
-          {heroImage
-            ? <img src={heroImage} alt={home.hero.title} class="h-full w-full object-cover" />
-            : <ProductImage shape="cake" seed={0} alt={home.hero.title} />}
-        </div>
-        <div class="absolute -bottom-4 left-4 flex items-center gap-3 rounded-2xl bg-white px-4 py-3 shadow-[var(--shadow-lift)] sm:left-8">
-          <span class="grid size-9 place-items-center rounded-full bg-accent-soft text-lg">🚚</span>
-          <span class="text-xs font-bold leading-tight">Доставка<br /><span class="font-semibold text-navy-soft">за 2 години по Києву</span></span>
+      <!-- Фото на всю праву частину: на десктопі виходить за край екрана, маска ріже лише зліва -->
+      <!-- Ліва межа прив'язана до текстової колонки, а не до середини екрана: на вузьких вікнах фото не наповзає на текст -->
+      <div class="rise relative -mx-4 mt-2 h-[360px] sm:-mx-6 sm:h-[440px] lg:absolute lg:inset-y-0 lg:right-0 lg:left-[max(620px,calc(50%-90px))] lg:mx-0 lg:mt-0 lg:h-full lg:w-auto">
+        <img
+          src={heroImage}
+          alt="Святковий торт, пончики з посипкою та кейкпопси"
+          class="h-full w-full object-cover object-center"
+          style={`-webkit-mask-image:url('${url('/images/hero-mask.svg')}');mask-image:url('${url('/images/hero-mask.svg')}');-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat`}
+        />
+
+        <div class="absolute bottom-5 left-8 flex w-60 items-center gap-3 rounded-[1.4rem] bg-white p-3.5 shadow-[var(--shadow-lift)] sm:left-14 sm:w-64 sm:p-4 lg:bottom-14 lg:left-28">
+          <span class="size-14 shrink-0 overflow-hidden rounded-2xl sm:size-16">
+            <ProductImage shape="cake" seed={3} alt="" />
+          </span>
+          <span class="flex min-w-0 flex-col gap-0.5">
+            <span class="text-[11px] font-bold uppercase tracking-[0.16em] text-accent-deep">Кейкпопси</span>
+            <span class="text-[15px] font-extrabold leading-tight">Готуємо за 1–2 дні</span>
+            <span class="text-[13px] font-bold text-primary">від 65 ₴</span>
+          </span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ВАРІАНТИ ТОВАРУ -->
+  <!-- РЯДОК УМОВ -->
+  <section aria-label="Умови роботи" class="overflow-hidden bg-navy py-5">
+    <div class="marquee flex w-max items-center gap-8 pl-4">
+      {[...TICKER, ...TICKER].map((item) => (
+        <span class="flex items-center gap-8">
+          <span class="font-display text-sm font-semibold uppercase tracking-[0.14em] text-white sm:text-base">{item}</span>
+          <span class="size-1.5 shrink-0 rounded-full bg-primary"></span>
+        </span>
+      ))}
+    </div>
+  </section>
+
+  <!-- ПРИВОДИ -->
+  {holidayCards.length > 0 && (
+    <section class="section bg-white">
+      <div class="container-page">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-accent-deep">Привід</p>
+            <h2 class="mt-1.5 font-display text-3xl font-semibold uppercase sm:text-[34px]">{home.variants.title || 'Що будемо святкувати'}</h2>
+          </div>
+          <p class="max-w-md text-[15px] leading-relaxed text-navy-soft">{home.variants.text}</p>
+        </div>
+
+        <div class="mt-7 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+          {holidayCards.map(({ holiday, count }) => (
+            <a href={url(`/svyata/${holiday.slug}`)} class="group flex flex-col overflow-hidden rounded-[1.5rem] border border-primary-soft bg-cream transition-shadow hover:shadow-[var(--shadow-lift)]">
+              <span class="block aspect-4/3 w-full overflow-hidden">
+                <ProductImage shape={shapeFor(holiday)} seed={holiday.id} alt={holiday.title} class="transition-transform duration-500 group-hover:scale-105" />
+              </span>
+              <span class="flex flex-1 flex-col p-4 sm:p-5">
+                <span class="flex items-start justify-between gap-2">
+                  <span class="text-base font-extrabold leading-snug sm:text-lg">{holiday.title}</span>
+                  <span class="grid size-8 shrink-0 place-items-center rounded-full bg-primary-soft text-primary transition-transform group-hover:translate-x-1">
+                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                  </span>
+                </span>
+                <span class="mt-2 line-clamp-2 text-[13px] leading-snug text-navy-soft sm:text-sm">{holiday.description}</span>
+                <span class="mt-auto pt-3 text-[11px] font-bold uppercase tracking-[0.18em] text-accent-deep">
+                  {count > 0 ? `${count} ${plural(count, 'позиція', 'позиції', 'позицій')}` : 'на замовлення'}
+                </span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- БЕСТСЕЛЕРИ -->
   <section class="section">
     <div class="container-page">
-      <SectionHeading eyebrow="Варіанти товару" title={home.variants.title || 'Що будемо святкувати?'} text={home.variants.text} />
-      <div class="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-        {categories.map((category, index) => <CategoryCard category={category} count={counts[index]} />)}
-      </div>
-    </div>
-  </section>
-
-  <!-- НАЙЧАСТІШЕ ЗАМОВЛЯЮТЬ -->
-  <section class="section bg-white">
-    <div class="container-page">
       <div class="flex flex-wrap items-end justify-between gap-4">
-        <SectionHeading eyebrow="Бестселери" title={home.bestsellers.title || 'Найчастіше замовляють'} text={home.bestsellers.text} />
-        <a href={url('/katalog')} class="btn btn-outline hidden sm:inline-flex">Весь каталог →</a>
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-accent-deep">Бестселери</p>
+          <h2 class="mt-1.5 font-display text-3xl font-semibold uppercase sm:text-[34px]">{home.bestsellers.title || 'Найчастіше замовляють'}</h2>
+        </div>
+        <a href={url('/katalog')} class="btn btn-outline hidden text-sm sm:inline-flex">Дивитись усе →</a>
       </div>
+
       <div class="mt-8 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
         {bestsellers.docs.slice(0, home.bestsellers.limit || 8).map((product) => <ProductCard product={product} />)}
       </div>
+
       <div class="mt-8 flex justify-center sm:hidden">
         <a href={url('/katalog')} class="btn btn-primary w-full">Весь каталог</a>
       </div>
     </div>
   </section>
 
-  <!-- CTA -->
+  <!-- ЯК ЗАМОВИТИ -->
+  <section class="bg-navy py-12 text-white sm:py-16">
+    <div class="container-page">
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <h2 class="font-display text-3xl font-semibold uppercase sm:text-[34px]">Як зробити замовлення</h2>
+        <p class="text-[15px] leading-relaxed text-white/70">Менеджер передзвонює протягом 15 хвилин у робочі години</p>
+      </div>
+
+      <ol class="mt-8 grid gap-8 lg:grid-cols-3">
+        {STEPS.map((step) => (
+          <li class="border-t-2 border-navy-line pt-5">
+            <p class="font-display text-4xl font-bold text-primary">{step.num}</p>
+            <p class="mt-3 text-lg font-extrabold">{step.title}</p>
+            <p class="mt-2 text-[15px] leading-relaxed text-white/70">{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- ТОРТ ЗА ЕСКІЗОМ -->
   <section class="section">
     <div class="container-page">
-      <div class="grid overflow-hidden rounded-[2rem] bg-navy text-white lg:grid-cols-2">
-        <div class="p-7 sm:p-10 lg:p-14">
-          <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-accent">Індивідуальне замовлення</p>
-          <h2 class="mt-3 text-2xl font-extrabold sm:text-4xl">{home.cta.title}</h2>
-          <p class="mt-4 max-w-md text-sm leading-relaxed text-white/75 sm:text-base">{home.cta.text}</p>
-          <a href={url(home.cta.buttonHref || '/kontakty')} class="btn btn-primary mt-7 sm:px-7 sm:py-4 sm:text-base">{home.cta.buttonLabel}</a>
+      <div class="grid gap-8 rounded-[2rem] bg-primary-soft p-6 sm:p-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-center lg:gap-12">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-primary-dark">Індивідуальне замовлення</p>
+          <h2 class="mt-3 font-display text-3xl font-bold uppercase leading-tight sm:text-[42px]">{home.cta.title}</h2>
+          <p class="mt-4 max-w-lg text-[15px] leading-relaxed text-navy-soft sm:text-base">{home.cta.text}</p>
+          <a href={url(home.cta.buttonHref || '/kontakty')} class="btn btn-primary mt-7 sm:px-7 sm:py-4">{home.cta.buttonLabel}</a>
         </div>
-        <div class="relative min-h-56 bg-primary/20 lg:min-h-full">
-          {ctaImage
-            ? <img src={ctaImage} alt={home.cta.title} class="h-full w-full object-cover" />
-            : <ProductImage shape="cakepop" seed={3} alt={home.cta.title} />}
-        </div>
+
+        <form action={url('/kontakty')} method="get" class="card flex flex-col gap-3.5 p-5 sm:p-6">
+          <label class="flex flex-col gap-1.5">
+            <span class="text-[13px] font-bold">Дата свята</span>
+            <input type="date" name="data" class="h-12 rounded-2xl border border-navy/12 bg-cream px-4 text-[15px] outline-none focus:border-primary" />
+          </label>
+          <label class="flex flex-col gap-1.5">
+            <span class="text-[13px] font-bold">Скільки гостей</span>
+            <input type="number" name="hosti" min="1" placeholder="20" class="h-12 rounded-2xl border border-navy/12 bg-cream px-4 text-[15px] outline-none focus:border-primary" />
+          </label>
+          <button type="submit" class="btn bg-navy py-3.5 text-white hover:bg-navy-line">Підібрати десерт</button>
+          <p class="text-center text-xs leading-snug text-navy-soft">Орієнтир: торт 2 кг — це 10–12 порцій</p>
+        </form>
       </div>
     </div>
   </section>
@@ -120,8 +241,12 @@ const ctaImage = mediaUrl(home.cta.image, 'hero')
   <!-- FAQ -->
   {home.faq.items && home.faq.items.length > 0 && (
     <section class="section bg-white">
-      <div class="container-page">
-        <SectionHeading eyebrow="FAQ" title={home.faq.title || 'Питання та відповіді'} align="center" class="mb-8" />
+      <div class="container-page grid gap-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-14">
+        <div>
+          <h2 class="font-display text-3xl font-semibold uppercase leading-tight sm:text-[34px]">{home.faq.title || 'Питання та відповіді'}</h2>
+          <p class="mt-4 text-[15px] leading-relaxed text-navy-soft">Не знайшли своє питання? Зателефонуйте — відповімо за кілька хвилин.</p>
+          <a href={url('/kontakty')} class="btn btn-outline mt-5 text-sm">Написати нам</a>
+        </div>
         <Faq items={home.faq.items} />
       </div>
     </section>

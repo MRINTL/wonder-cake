@@ -55,7 +55,7 @@ export type PageDoc = {
 }
 
 export type HomeGlobal = {
-  hero: { eyebrow?: string; title: string; text?: string; primaryLabel?: string; primaryHref?: string; secondaryLabel?: string; secondaryHref?: string; image?: Media }
+  hero: { eyebrow?: string; title: string; titleAccent?: string; text?: string; primaryLabel?: string; primaryHref?: string; secondaryLabel?: string; secondaryHref?: string; image?: Media }
   counters: { donuts: number; donutsLabel?: string; cakesKg: number; cakesLabel?: string; years?: number; yearsLabel?: string }
   variants: { title?: string; text?: string }
   bestsellers: { title?: string; text?: string; limit?: number }

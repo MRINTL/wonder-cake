@@ -4,6 +4,7 @@ import { formatPrice, priceMeta } from '../lib/format'
 import ProductImage from './ProductImage.astro'
 import Badge from './Badge.astro'
 import { url } from '../lib/url'
+import { photoFor } from '../lib/photos'
 
 type Props = { product: Product; class?: string }
 const { product, class: className = '' } = Astro.props
@@ -20,7 +21,7 @@ const payload = JSON.stringify({
 ---
 <article class={`card group relative flex flex-col overflow-hidden transition-shadow hover:shadow-[var(--shadow-lift)] ${className}`}>
   <a href={href} class="relative block aspect-square overflow-hidden bg-primary-soft">
-    <ProductImage shape={product.category?.shape} seed={product.id} image={product.image} alt={product.title} class="transition-transform duration-500 group-hover:scale-105" />
+    <ProductImage shape={product.category?.shape} seed={product.id} image={product.image} photo={photoFor(product.slug)} alt={product.title} class="transition-transform duration-500 group-hover:scale-105" />
   </a>
 
   {product.badges && product.badges.length > 0 && (
@@ -41,7 +42,7 @@ const payload = JSON.stringify({
   </button>
 
   <div class="flex flex-1 flex-col p-4">
-    <p class="text-xs font-semibold uppercase tracking-wide text-accent">{product.category?.title}</p>
+    <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-accent-deep">{product.category?.title}</p>
     <h3 class="mt-1 text-base font-bold leading-snug">
       <a href={href} class="hover:text-primary">{product.title}</a>
     </h3>
@@ -50,7 +51,7 @@ const payload = JSON.stringify({
     <div class="mt-auto flex flex-col gap-3 pt-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <div class="flex items-baseline gap-2">
-          <span class="text-xl font-extrabold">{formatPrice(product.price)} ₴</span>
+          <span class="text-xl font-extrabold text-primary">{formatPrice(product.price)} ₴</span>
           {product.oldPrice && <span class="text-sm text-navy-soft line-through">{formatPrice(product.oldPrice)} ₴</span>}
         </div>
         <p class="text-xs text-navy-soft">{priceMeta(product)}</p>

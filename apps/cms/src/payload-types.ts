@@ -685,6 +685,10 @@ export interface Home {
   hero: {
     eyebrow?: string | null;
     title: string;
+    /**
+     * Останній рядок заголовка, виділений кольором. Напр. «і на свято».
+     */
+    titleAccent?: string | null;
     text?: string | null;
     primaryLabel?: string | null;
     primaryHref?: string | null;
@@ -772,6 +776,7 @@ export interface HomeSelect<T extends boolean = true> {
     | {
         eyebrow?: T;
         title?: T;
+        titleAccent?: T;
         text?: T;
         primaryLabel?: T;
         primaryHref?: T;

@@ -1,17 +1,20 @@
 ---
-/** SVG-заглушка замість фото: форма залежить від категорії, палітра — від id товару */
+/** Фото товару, якщо воно є; інакше SVG-заглушка: форма з категорії, палітра з id товару */
 import { mediaUrl, type Media } from '../lib/payload'
+import { url as withBase } from '../lib/url'
 
 type Props = {
   shape?: 'cake' | 'donut' | 'cakepop' | 'other'
   seed?: number
   image?: Media | null
+  /** Шлях до демо-фото у public (див. lib/photos.ts) */
+  photo?: string
   alt?: string
   class?: string
   sizeName?: string
 }
 
-const { shape = 'cake', seed = 0, image = null, alt = '', class: className = '', sizeName = 'card' } = Astro.props
+const { shape = 'cake', seed = 0, image = null, photo, alt = '', class: className = '', sizeName = 'card' } = Astro.props
 
 const PALETTES = [
   { bg: '#fde7f1', a: '#e20b6c', b: '#f9a8cd', c: '#69cdde' },
@@ -20,14 +23,15 @@ const PALETTES = [
   { bg: '#f1eefc', a: '#8f7ae5', b: '#cfc6f5', c: '#69cdde' },
 ]
 const p = PALETTES[Math.abs(seed) % PALETTES.length]
-const url = mediaUrl(image, sizeName)
+const url = mediaUrl(image, sizeName) || (photo ? withBase(photo) : null)
 const id = `g${shape}${Math.abs(seed)}`
 ---
 
 {url ? (
   <img src={url} alt={image?.alt || alt} class={`h-full w-full object-cover ${className}`} loading="lazy" decoding="async" />
 ) : (
-  <svg viewBox="0 0 400 400" role="img" aria-label={alt} class={`h-full w-full ${className}`} style={`background:${p.bg}`}>
+  /* slice: у неквадратних блоках ілюстрація заповнює рамку, а не «лист» з полями */
+  <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label={alt} class={`h-full w-full ${className}`} style={`background:${p.bg}`}>
     <defs>
       <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stop-color={p.a} />

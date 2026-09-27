@@ -8,6 +8,7 @@ import type { GetStaticPaths } from 'astro'
 import { getProducts, type Product } from '../../lib/payload'
 import { ALLERGEN_LABEL, formatDecimal, formatPrice, priceMeta } from '../../lib/format'
 import { url } from '../../lib/url'
+import { photoFor } from '../../lib/photos'
 
 export const getStaticPaths = (async () => {
   const { docs } = await getProducts({ limit: 100 })
@@ -54,7 +55,7 @@ const specs = [
     <div class="container-page grid gap-8 lg:grid-cols-2 lg:gap-12">
       <div>
         <div class="relative aspect-square overflow-hidden rounded-[2rem] bg-primary-soft shadow-[var(--shadow-soft)]">
-          <ProductImage shape={product.category?.shape} seed={product.id} image={product.image} alt={product.title} sizeName="hero" />
+          <ProductImage shape={product.category?.shape} seed={product.id} image={product.image} photo={photoFor(product.slug)} alt={product.title} sizeName="hero" />
           {product.badges && product.badges.length > 0 && (
             <div class="absolute left-4 top-4 flex flex-wrap gap-2">
               {product.badges.map((badge) => <Badge value={badge} />)}

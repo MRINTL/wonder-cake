@@ -13,6 +13,12 @@ export const Home: GlobalConfig = {
       fields: [
         { name: 'eyebrow', type: 'text', label: 'Надзаголовок' },
         { name: 'title', type: 'text', label: 'Заголовок', required: true },
+        {
+          name: 'titleAccent',
+          type: 'text',
+          label: 'Заголовок — рожевий рядок',
+          admin: { description: 'Останній рядок заголовка, виділений кольором. Напр. «і на свято».' },
+        },
         { name: 'text', type: 'textarea', label: 'Текст', admin: { rows: 3 } },
         { name: 'primaryLabel', type: 'text', label: 'Кнопка 1 — текст', defaultValue: 'Обрати десерт' },
         { name: 'primaryHref', type: 'text', label: 'Кнопка 1 — посилання', defaultValue: '/katalog' },

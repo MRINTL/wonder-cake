@@ -8,9 +8,13 @@
   --color-accent-soft: #e6f7fa;
   --color-navy: #071a3b;
   --color-navy-soft: #4a5a75;
+  --color-navy-line: #26365a;
   --color-cream: #fdfbf9;
+  /* Бірюза, темніша за --color-accent: контрастна на білому для дрібних написів */
+  --color-accent-deep: #137c8c;
 
   --font-sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Oswald', 'Arial Narrow', ui-sans-serif, sans-serif;
 
   --radius-card: 1.5rem;
 
@@ -128,5 +132,15 @@
 
   .rise {
     animation: rise 0.5s ease both;
+  }
+
+  /* Рядок умов під банером: вміст продубльовано, тому зсув на 50% безшовний */
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .marquee {
+    animation: marquee 32s linear infinite;
   }
 }

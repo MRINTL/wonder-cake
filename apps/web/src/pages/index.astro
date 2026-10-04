@@ -97,26 +97,26 @@ const heroImage = mediaUrl(home.hero.image, 'hero') || url('/hero.jpg')
         </dl>
       </div>
 
-      <!-- Фото на всю праву частину: на десктопі виходить за край екрана, маска ріже лише зліва -->
-      <!-- Ліва межа прив'язана до текстової колонки, а не до середини екрана: на вузьких вікнах фото не наповзає на текст -->
-      <div class="rise relative -mx-4 mt-2 h-[360px] sm:-mx-6 sm:h-[440px] lg:absolute lg:inset-y-0 lg:right-0 lg:left-[max(620px,calc(50%-90px))] lg:mx-0 lg:mt-0 lg:h-full lg:w-auto">
-        <img
-          src={heroImage}
-          alt="Святковий торт, пончики з посипкою та кейкпопси"
-          class="h-full w-full object-cover object-center"
-          style={`-webkit-mask-image:url('${url('/images/hero-mask.svg')}');mask-image:url('${url('/images/hero-mask.svg')}');-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat`}
-        />
+    </div>
+    <!-- Фото на всю праву частину: на десктопі виходить за край екрана, маска ріже лише зліва -->
+    <!-- Ліва межа прив'язана до текстової колонки, а не до середини екрана: на вузьких вікнах фото не наповзає на текст -->
+    <div class="rise relative mt-2 h-[360px] sm:h-[440px] lg:absolute lg:inset-y-0 lg:right-0 lg:left-[max(620px,calc(50%-90px))] lg:mx-0 lg:mt-0 lg:h-full lg:w-auto">
+      <img
+        src={heroImage}
+        alt="Святковий торт, пончики з посипкою та кейкпопси"
+        class="h-full w-full object-cover object-center"
+        style={`-webkit-mask-image:url('${url('/images/hero-mask.svg')}');mask-image:url('${url('/images/hero-mask.svg')}');-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat`}
+      />
 
-        <div class="absolute bottom-5 left-8 flex w-60 items-center gap-3 rounded-[1.4rem] bg-white p-3.5 shadow-[var(--shadow-lift)] sm:left-14 sm:w-64 sm:p-4 lg:bottom-14 lg:left-28">
-          <span class="size-14 shrink-0 overflow-hidden rounded-2xl sm:size-16">
-            <ProductImage shape="cake" seed={3} alt="" />
-          </span>
-          <span class="flex min-w-0 flex-col gap-0.5">
-            <span class="text-[11px] font-bold uppercase tracking-[0.16em] text-accent-deep">Кейкпопси</span>
-            <span class="text-[15px] font-extrabold leading-tight">Готуємо за 1–2 дні</span>
-            <span class="text-[13px] font-bold text-primary">від 65 ₴</span>
-          </span>
-        </div>
+      <div class="absolute bottom-5 left-8 flex w-60 items-center gap-3 rounded-[1.4rem] bg-white p-3.5 shadow-[var(--shadow-lift)] sm:left-14 sm:w-64 sm:p-4 lg:bottom-14 lg:left-28">
+        <span class="size-14 shrink-0 overflow-hidden rounded-2xl sm:size-16">
+          <ProductImage shape="cake" seed={3} alt="" />
+        </span>
+        <span class="flex min-w-0 flex-col gap-0.5">
+          <span class="text-[11px] font-bold uppercase tracking-[0.16em] text-accent-deep">Кейкпопси</span>
+          <span class="text-[15px] font-extrabold leading-tight">Готуємо за 1–2 дні</span>
+          <span class="text-[13px] font-bold text-primary">від 65 ₴</span>
+        </span>
       </div>
     </div>
   </section>

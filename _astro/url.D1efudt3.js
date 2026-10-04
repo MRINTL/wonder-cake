@@ -1,0 +1,1 @@
+var e=`/wonder-cake`.replace(/\/$/,``),t=t=>{if(!t.startsWith(`/`))return t;let[,n,r]=t.match(/^([^?#]*)(.*)$/),i=/\.[a-z0-9]+$/i.test(n);return`${e}${n.endsWith(`/`)||i?n:`${n}/`}${r}`};export{t};

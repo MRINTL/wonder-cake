@@ -1,0 +1,1 @@
+import{t as e}from"./phone-mask.DyFmedse.js";e(),document.addEventListener(`click`,e=>{let t=e.target.closest(`[data-reveal-toggle]`);if(!t)return;let n=t.parentElement?.querySelector(`[data-reveal-input]`);if(!n)return;let r=n.type===`text`;n.type=r?`password`:`text`,t.setAttribute(`aria-label`,r?`Показати пароль`:`Сховати пароль`)});
